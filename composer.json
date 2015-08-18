@@ -1,0 +1,15 @@
+{
+    "name": "petitchevalroux/newswatcher-api",
+    "description": "newswatcher rest api",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "Patrick Poulain",
+            "email": "petitchevalroux@free.fr"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "slim/slim": "~2.6"
+    }
+}
