@@ -11,5 +11,10 @@
     "minimum-stability": "stable",
     "require": {
         "slim/slim": "~2.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "NwApi\\": "src/"
+        }
     }
 }
