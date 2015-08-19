@@ -16,7 +16,6 @@ if ($slimMode === 'development') {
     $debug = false;
 }
 
-
 $app = new \Slim\Slim([
     'mode' => $slimMode,
     'debug' => $debug,

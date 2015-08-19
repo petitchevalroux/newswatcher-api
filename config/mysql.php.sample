@@ -1,0 +1,8 @@
+<?php
+// This is a sample configuration file for mysql
+// copy it to config/mysql.php and use your own values
+$host = 'host';
+$user = 'user';
+$password = 'password';
+$database = 'database';
+$port = 'port';
