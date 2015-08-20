@@ -1,6 +1,6 @@
 <?php
 
-namespace NwApi\libraries;
+namespace NwApi\Libraries;
 
 /**
  * Implement singleton design pattern.
