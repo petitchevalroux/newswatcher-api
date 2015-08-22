@@ -20,6 +20,10 @@ class Di extends Libraries\Singleton
 
     public function __get($name)
     {
-        return require $this->getDependencyPath($name);
+        if (!isset($this->{$name})) {
+            $this->{$name} = require $this->getDependencyPath($name);
+        }
+
+        return $this->{$name};
     }
 }
