@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Table(name="users")
  * @ORM\Entity
  */
-class User
+class User implements \JsonSerializable
 {
     /**
      * @var int
@@ -16,10 +16,34 @@ class User
      * @ORM\Id
      * @ORM\GeneratedValue(strategy="IDENTITY")
      */
-    private $id;
+    protected $id;
+
     /**
      * @var string
      * @ORM\Column(type="string",length=255)
      */
-    private $name;
+    protected $name;
+
+    public function setName($value)
+    {
+        $this->name = (string) $value;
+    }
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function jsonSerialize()
+    {
+        return [
+            'id' => $this->getId(),
+            'name' => $this->getName(),
+        ];
+    }
 }
