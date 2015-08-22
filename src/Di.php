@@ -2,6 +2,15 @@
 
 namespace NwApi;
 
+/**
+ * @property \Doctrine\ORM\EntityManager $em Doctrine entity manager
+ * @property string $configPath directory containing configuration files
+ * @property string $entitiesPath directory containing entities files
+ * @property string $rootPath directory containing the whole project
+ * @property string $srcPath directory containing project's sources
+ * @property int $env define current environment using ENV_DEVELOPMENT|ENV_PRODUCTION
+ * @property \Slim\Slim $slim framework object
+ */
 class Di extends Libraries\Singleton
 {
     protected function __construct()
