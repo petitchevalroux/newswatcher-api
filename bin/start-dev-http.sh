@@ -8,4 +8,4 @@ DOCKER_IMAGE=$(docker build . | egrep -o 'Successfully built [a-zA-Z0-9]+' | sed
 echo $DOCKER_IMAGE
 
 docker run -d --name newswatcher-db -e MYSQL_ROOT_PASSWORD=qmcHwhHNPjfnOM1y mysql:latest
-docker run -d --name newswatcher-api --link newswatcher-db:db -p 8080:80 -v $DIR:/data/http -e "SLIM_MODE=development" $DOCKER_IMAGE
+docker run -d --name newswatcher-api --link newswatcher-db:db -p 8080:80 -v $DIR:/data/http $DOCKER_IMAGE
