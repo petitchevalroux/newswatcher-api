@@ -8,42 +8,42 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Table(name="users")
  * @ORM\Entity
  */
-class User implements \JsonSerializable
+class User extends Entity implements \JsonSerializable
 {
-    /**
-     * @var int
-     * @ORM\Column(type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="IDENTITY")
-     */
-    protected $id;
-
     /**
      * @var string
      * @ORM\Column(type="string",length=255)
      */
-    protected $name;
+    public $name;
 
-    public function setName($value)
-    {
-        $this->name = (string) $value;
-    }
+    /**
+     * @var string
+     * @ORM\Column(type="string",length=20)
+     * Maximum length correspond to 2^64 according to
+     * https://dev.twitter.com/overview/api/twitter-ids-json-and-snowflake
+     */
+    public $twitterId;
 
-    public function getName()
-    {
-        return $this->name;
-    }
+    /**
+     * @var string
+     * @ORM\Column(type="string")
+     */
+    public $twitterToken;
 
-    public function getId()
-    {
-        return $this->id;
-    }
+    /**
+     * @var string
+     * @ORM\Column(type="string")
+     */
+    public $twitterTokenSecret;
 
     public function jsonSerialize()
     {
         return [
-            'id' => $this->getId(),
-            'name' => $this->getName(),
+            'id' => $this->id,
+            'name' => $this->name,
+            'twitterId' => $this->twitterId,
+            'twitterToken' => $this->twitterToken,
+            'twitterTokenSecret' => $this->twitterTokenSecret,
         ];
     }
 }

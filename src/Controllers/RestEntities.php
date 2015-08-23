@@ -5,7 +5,7 @@ namespace NwApi\Controllers;
 use NwApi\Libraries\Singleton;
 use NwApi\Di;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Exception;
+use NwApi\Entities\Entity;
 
 class RestEntities extends Singleton
 {
@@ -126,19 +126,15 @@ class RestEntities extends Singleton
      * Copy properties from body request to $entity and save it.
      *
      * @param ClassMetadata $meta
-     * @param entity        $entity
+     * @param Entity        $entity
      *
-     * @return type
+     * @return Entity
      */
-    private function setProperties(ClassMetadata $meta, $entity)
+    private function setProperties(ClassMetadata $meta, Entity $entity)
     {
         $di = Di::getInstance();
-        $this->processBodyProperties($meta, function ($name, $value) use ($meta,$entity) {
-            $method = 'set'.ucfirst($name);
-            if (!method_exists($entity, $method)) {
-                throw new Exception('Undefined method '.$meta->name.'::'.$method);
-            }
-            call_user_func([$entity, 'set'.ucfirst($name)], $value);
+        $this->processBodyProperties($meta, function ($name, $value) use ($meta, $entity) {
+            $entity->{$name} = $value;
         });
         $di->em->persist($entity);
         $di->em->flush();
