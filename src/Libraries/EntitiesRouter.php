@@ -31,27 +31,27 @@ class EntitiesRouter extends Singleton
         $namespace = $this->getNamespace($meta);
         $url = '/'.$namespace;
         // Fetch entities route
-        $application->get($url, function () use ($meta,$controller) {
+        $application->get($url, function () use ($meta, $controller) {
             $controller->getEntities($meta);
         });
         // Create entity
-        $application->post($url, function () use ($meta,$controller) {
+        $application->post($url, function () use ($meta, $controller) {
             $controller->createEntity($meta);
         });
         // Get entity
-        $application->get($url.'/:id', function ($id) use ($meta,$controller) {
+        $application->get($url.'/:id', function ($id) use ($meta, $controller) {
             $controller->getEntity($meta, $id);
         });
         // Update entity
-        $application->put($url.'/:id', function ($id) use ($meta,$controller) {
+        $application->put($url.'/:id', function ($id) use ($meta, $controller) {
             $controller->updateEntity($meta, $id);
         });
         // Patch entity
-        $application->patch($url.'/:id', function ($id) use ($meta,$controller) {
+        $application->patch($url.'/:id', function ($id) use ($meta, $controller) {
             $controller->patchEntity($meta, $id);
         });
         // Delete entity
-        $application->delete($url.'/:id', function ($id) use ($meta,$controller) {
+        $application->delete($url.'/:id', function ($id) use ($meta, $controller) {
             $controller->deleteEntity($meta, $id);
         });
 
