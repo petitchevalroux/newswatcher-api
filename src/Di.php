@@ -10,6 +10,8 @@ namespace NwApi;
  * @property string $srcPath directory containing project's sources
  * @property int $env define current environment using ENV_DEVELOPMENT|ENV_PRODUCTION
  * @property \Slim\Slim $slim framework object
+ * @property string $templatesPath directory containing templates
+ * @property Doctrine\DBAL\Logging\DebugStack $sqlLogger logger containing all sql queries
  */
 class Di extends Libraries\Singleton
 {
