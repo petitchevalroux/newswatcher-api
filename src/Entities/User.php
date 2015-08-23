@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Table(name="users")
  * @ORM\Entity
  */
-class User extends Entity implements \JsonSerializable
+class User extends Entity
 {
     /**
      * @var string
@@ -38,8 +38,7 @@ class User extends Entity implements \JsonSerializable
 
     public function jsonSerialize()
     {
-        return [
-            'id' => $this->id,
+        return parent::jsonSerialize() + [
             'name' => $this->name,
             'twitterId' => $this->twitterId,
             'twitterToken' => $this->twitterToken,

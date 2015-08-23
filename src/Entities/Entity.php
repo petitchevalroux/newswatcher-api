@@ -4,7 +4,7 @@ namespace NwApi\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
 
-abstract class Entity
+abstract class Entity implements \JsonSerializable
 {
     /**
      * @var int
@@ -16,7 +16,7 @@ abstract class Entity
 
     public function jsonSerialize()
     {
-        return parent::jsonSerialize() + [
+        return [
             'id' => $this->id,
         ];
     }
