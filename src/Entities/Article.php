@@ -5,7 +5,7 @@ namespace NwApi\Entities;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Table(name="articles")
+ * @ORM\Table(name="articles",options={"collate"="utf8mb4_unicode_ci", "charset"="utf8mb4"})
  * @ORM\Entity
  * @ORM\HasLifecycleCallbacks
  */

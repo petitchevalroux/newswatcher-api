@@ -26,5 +26,5 @@ return EntityManager::create([
     'host' => $mysqlConfig->host,
     'port' => $mysqlConfig->port,
     'dbname' => $mysqlConfig->database,
-    'charset' => 'utf8',
+    'charset' => 'utf8mb4',
 ], $annotationConfig);

@@ -5,14 +5,14 @@ namespace NwApi\Entities;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Table(name="users")
+ * @ORM\Table(name="users",options={"collate"="utf8mb4_unicode_ci", "charset"="utf8mb4"})
  * @ORM\Entity
  */
 class User extends Entity
 {
     /**
      * @var string
-     * @ORM\Column(type="string",length=255)
+     * @ORM\Column(type="string")
      */
     public $name;
 
