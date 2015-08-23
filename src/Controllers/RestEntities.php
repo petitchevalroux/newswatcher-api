@@ -49,7 +49,6 @@ class RestEntities extends Singleton
      */
     public function getEntity(ClassMetadata $meta, $id)
     {
-        $di = Di::getInstance();
         $entity = $this->fetchEntity($meta, $id);
         $this->response($entity);
     }
@@ -66,7 +65,7 @@ class RestEntities extends Singleton
         $data = json_decode($di->slim->request->getBody(), true);
         $this->setProperties($meta, $entity, $data);
         $di->slim->response->setStatus(201);
-        $di->slim->response->headers->set('Location', $di->slim->request->getResourceUri().'/'.$entity->getId());
+        $di->slim->response->headers->set('Location', $di->slim->request->getResourceUri().'/'.$entity->id);
         $this->response($entity);
     }
 
@@ -78,7 +77,6 @@ class RestEntities extends Singleton
      */
     public function updateEntity(ClassMetadata $meta, $id)
     {
-        $di = Di::getInstance();
         $entity = $this->fetchEntity($meta, $id);
         $this->setProperties($meta, $entity);
         $this->response($entity);
@@ -92,17 +90,9 @@ class RestEntities extends Singleton
      */
     public function patchEntity(ClassMetadata $meta, $id)
     {
-        $di = Di::getInstance();
-        $qb = $di->em->createQueryBuilder();
-        $qb->update($meta->name, 'e')
-                ->where('e.id = :id')
-                ->setParameter('id', $id);
-        $this->processBodyProperties($meta, function ($name, $value) use ($qb) {
-            $qb->set('e.'.$name, $qb->expr()->literal($value));
-        });
-        $qb->getQuery()->execute();
-        $entity = $this->fetchEntity($meta, $id);
-        $this->response($entity);
+        // For patch we use the same as update as Doctrine handle it nicely
+        // plus it allow to properly use LifeCycle in entity
+        $this->updateEntity($meta, $id);
     }
 
     /**
