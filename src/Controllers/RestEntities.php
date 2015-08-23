@@ -38,7 +38,7 @@ class RestEntities extends Singleton
         $limit = $di->slim->request->get('limit');
         $offset = $di->slim->request->get('offset');
         $entities = $repository->findBy($filters, $orders, $limit, $offset);
-        $di->slim->response->setBody(json_encode($entities));
+        $this->response($entities);
     }
 
     /**
@@ -51,7 +51,7 @@ class RestEntities extends Singleton
     {
         $di = Di::getInstance();
         $entity = $this->fetchEntity($meta, $id);
-        $di->slim->response->setBody(json_encode($entity));
+        $this->response($entity);
     }
 
     /**
@@ -67,7 +67,7 @@ class RestEntities extends Singleton
         $this->setProperties($meta, $entity, $data);
         $di->slim->response->setStatus(201);
         $di->slim->response->headers->set('Location', $di->slim->request->getResourceUri().'/'.$entity->getId());
-        $di->slim->response->setBody(json_encode($entity));
+        $this->response($entity);
     }
 
     /**
@@ -81,7 +81,7 @@ class RestEntities extends Singleton
         $di = Di::getInstance();
         $entity = $this->fetchEntity($meta, $id);
         $this->setProperties($meta, $entity);
-        $di->slim->response->setBody(json_encode($entity));
+        $this->response($entity);
     }
 
     /**
@@ -102,7 +102,7 @@ class RestEntities extends Singleton
         });
         $qb->getQuery()->execute();
         $entity = $this->fetchEntity($meta, $id);
-        $di->slim->response->setBody(json_encode($entity));
+        $this->response($entity);
     }
 
     /**
@@ -178,5 +178,12 @@ class RestEntities extends Singleton
                 call_user_func($callback, $name, $value);
             }
         }
+    }
+
+    private function response($body)
+    {
+        $di = Di::getInstance();
+        $di->slim->response->setBody(json_encode($body));
+        $di->slim->response->headers->set('Content-Type', 'application/json');
     }
 }

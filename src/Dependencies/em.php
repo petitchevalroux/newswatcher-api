@@ -15,6 +15,10 @@ $annotationConfig = Setup::createAnnotationMetadataConfiguration(
     false // Do not use simple annotation reader
 );
 
+if ($di->env === ENV_DEVELOPMENT) {
+    $annotationConfig->setSQLLogger($di->sqlLogger);
+}
+
 return EntityManager::create([
     'driver' => 'mysqli',
     'user' => $mysqlConfig->user,
