@@ -6,6 +6,8 @@ use NwApi\Di;
 use Slim\Slim;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use NwApi\Controllers\RestEntities as Controller;
+use NwApi\Entities\Entity;
+use Exception;
 
 class EntitiesRouter extends Singleton
 {
@@ -38,21 +40,22 @@ class EntitiesRouter extends Singleton
         $application->post($url, function () use ($meta, $controller) {
             $controller->createEntity($meta);
         });
+        $entityPath = $url.'/:'.implode('/:', $meta->identifier);
         // Get entity
-        $application->get($url.'/:id', function ($id) use ($meta, $controller) {
-            $controller->getEntity($meta, $id);
+        $application->get($entityPath, function () use ($meta, $controller) {
+            $controller->getEntity($meta, func_get_args());
         });
         // Update entity
-        $application->put($url.'/:id', function ($id) use ($meta, $controller) {
-            $controller->updateEntity($meta, $id);
+        $application->put($entityPath, function () use ($meta, $controller) {
+            $controller->updateEntity($meta, func_get_args());
         });
         // Patch entity
-        $application->patch($url.'/:id', function ($id) use ($meta, $controller) {
-            $controller->patchEntity($meta, $id);
+        $application->patch($entityPath, function () use ($meta, $controller) {
+            $controller->patchEntity($meta, func_get_args());
         });
         // Delete entity
-        $application->delete($url.'/:id', function ($id) use ($meta, $controller) {
-            $controller->deleteEntity($meta, $id);
+        $application->delete($entityPath, function () use ($meta, $controller) {
+            $controller->deleteEntity($meta, func_get_args());
         });
 
         return $application;
@@ -65,12 +68,44 @@ class EntitiesRouter extends Singleton
      *
      * @return string
      */
-    protected function getNamespace(ClassMetadata $meta)
+    public function getNamespace(ClassMetadata $meta)
     {
         reset($meta->table);
         list(, $namespace) = each($meta->table);
         reset($meta->table);
 
         return $namespace;
+    }
+
+    /**
+     * Return entity location.
+     *
+     * @param ClassMetadata           $meta
+     * @param \NwApi\Libraries\Entity $entity
+     *
+     * @return string
+     *
+     * @throws Exception
+     */
+    public function getEntityLocation(ClassMetadata $meta, Entity $entity)
+    {
+        $location = '/'.$this->getNamespace($meta);
+        foreach ($meta->identifier as $field) {
+            $value = false;
+            if ($meta->hasField($field)) {
+                $value = $entity->{$field};
+            }
+            if ($meta->hasAssociation($field) && $meta->isAssociationWithSingleJoinColumn($field)) {
+                $idField = $meta->associationMappings[$field]['joinColumns'][0]['referencedColumnName'];
+                $value = $entity->{$field}->{$idField};
+            }
+            if ($value !== false) {
+                $location .= '/'.rawurlencode($value);
+            } else {
+                throw new Exception('Unable to get value for identifier '.$field.' on '.$meta->name);
+            }
+        }
+
+        return $location;
     }
 }
