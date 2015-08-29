@@ -6,6 +6,8 @@ use NwApi\Libraries\Singleton;
 use NwApi\Di;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use NwApi\Entities\Entity;
+use NwApi\Libraries\EntitiesRouter as Router;
+use Exception;
 
 class RestEntities extends Singleton
 {
@@ -45,7 +47,7 @@ class RestEntities extends Singleton
      * Retrieves a specific entity.
      *
      * @param ClassMetadata $meta entity metadata
-     * @param int           $id
+     * @param array         $id
      */
     public function getEntity(ClassMetadata $meta, $id)
     {
@@ -65,7 +67,7 @@ class RestEntities extends Singleton
         $data = json_decode($di->slim->request->getBody(), true);
         $this->setProperties($meta, $entity, $data);
         $di->slim->response->setStatus(201);
-        $di->slim->response->headers->set('Location', $di->slim->request->getResourceUri().'/'.$entity->id);
+        $di->slim->response->headers->set('Location', Router::getInstance()->getEntityLocation($meta, $entity));
         $this->response($entity);
     }
 
@@ -73,7 +75,7 @@ class RestEntities extends Singleton
      * Updates a existing entity.
      *
      * @param ClassMetadata $meta entity metadata
-     * @param int           $id
+     * @param array         $id
      */
     public function updateEntity(ClassMetadata $meta, $id)
     {
@@ -86,7 +88,7 @@ class RestEntities extends Singleton
      * Partially updates entity.
      *
      * @param ClassMetadata $meta entity metadata
-     * @param int           $id
+     * @param array         $id
      */
     public function patchEntity(ClassMetadata $meta, $id)
     {
@@ -99,17 +101,17 @@ class RestEntities extends Singleton
      * Deletes entity.
      *
      * @param ClassMetadata $meta entity metadata
-     * @param int           $id
+     * @param array         $id
      */
     public function deleteEntity(ClassMetadata $meta, $id)
     {
         $di = Di::getInstance();
-        $qb = $di->em->createQueryBuilder();
-        $qb->delete($meta->name, 'e')
-                ->where('e.id = :id')
-                ->setParameter('id', $id);
-        $qb->getQuery()->execute();
-        $di->slim->response->setStatus(204);
+        $entity = $this->fetchEntity($meta, $id);
+        if (!is_null($entity)) {
+            $di->em->remove($entity);
+            $di->em->flush();
+            $di->slim->response->setStatus(204);
+        }
     }
 
     /**
@@ -123,11 +125,44 @@ class RestEntities extends Singleton
     private function setProperties(ClassMetadata $meta, Entity $entity)
     {
         $di = Di::getInstance();
-        $this->processBodyProperties($meta, function ($name, $value) use ($meta, $entity) {
-            $entity->{$name} = $value;
-        });
+        $data = json_decode($di->slim->request->getBody(), true);
+        foreach ($data as $name => $value) {
+            $entity = $this->setProperty($meta, $entity, $name, $value);
+        }
         $di->em->persist($entity);
         $di->em->flush();
+
+        return $entity;
+    }
+
+    /**
+     * Set entity property value according to meta.
+     *
+     * @param ClassMetadata $meta
+     * @param Entity        $entity
+     * @param string        $name
+     * @param string        $value
+     *
+     * @return Entity
+     */
+    private function setProperty(ClassMetadata $meta, Entity $entity, $name, $value)
+    {
+        if ($meta->hasField($name) && !$meta->isIdentifier($name)) {
+            $meta->setFieldValue($entity, $name, $value);
+        } elseif ($meta->hasAssociation($name)) {
+            // We have a single value and there is only one column in association
+            if (!is_array($value) && !is_object($value) && $meta->isAssociationWithSingleJoinColumn($name)) {
+                $id = [$meta->associationMappings[$name]['joinColumns'][0]['referencedColumnName'] => $value];
+                $linkedEntity = $di->em->find($meta->getAssociationTargetClass($name), $id);
+                if (is_null($linkedEntity)) {
+                    $di->slim->response->setStatus(404);
+                } else {
+                    $meta->setFieldValue($entity, $name, $linkedEntity);
+                }
+            } else {
+                throw new Exception('Unhandled association type for field '.$name.' on '.$meta->name);
+            }
+        }
 
         return $entity;
     }
@@ -143,31 +178,12 @@ class RestEntities extends Singleton
     private function fetchEntity(ClassMetadata $meta, $id)
     {
         $di = Di::getInstance();
-        $entity = $di->em->find($meta->name, $id);
+        $entity = $di->em->find($meta->name, array_combine($meta->identifier, $id));
         if (is_null($entity)) {
-            $di->slim->notFound();
+            $di->slim->response->setStatus(404);
         }
 
         return $entity;
-    }
-
-    /**
-     * Decode the request body data and process callbalk on each data fields.
-     *
-     * @param ClassMetadata               $meta
-     * @param \NwApi\Controllers\callable $callback
-     */
-    private function processBodyProperties(ClassMetadata $meta, callable $callback)
-    {
-        $di = Di::getInstance();
-        $data = json_decode($di->slim->request->getBody(), true);
-        foreach ($meta->fieldMappings as $field) {
-            $name = $field['fieldName'];
-            if (isset($data[$name]) && (!isset($field['id']) || $field['id'] !== true)) {
-                $value = $data[$name];
-                call_user_func($callback, $name, $value);
-            }
-        }
     }
 
     private function response($body)
