@@ -5,11 +5,11 @@ namespace NwApi\Libraries;
 use NwApi\Di;
 use Slim\Slim;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use NwApi\Controllers\RestEntities as Controller;
+use NwApi\Controllers\JsonApiController as Controller;
 use NwApi\Entities\Entity;
 use Exception;
 
-class EntitiesRouter extends Singleton
+class RestDoctrineRouter extends Singleton
 {
     private function getEntitiesMetas()
     {
