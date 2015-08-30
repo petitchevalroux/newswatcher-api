@@ -6,11 +6,14 @@ use NwApi\Libraries\Singleton;
 use NwApi\Di;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use NwApi\Entities\Entity;
-use NwApi\Libraries\EntitiesRouter as Router;
-use Exception;
+use NwApi\Libraries\RestDoctrineRouter as Router;
+use NwApi\Exceptions\Server as ServerException;
+use NwApi\Exceptions\Client as ClientException;
 
-class RestEntities extends Singleton
+class JsonApiController extends Singleton
 {
+    const DEFAULT_CONTENT_TYPE = 'application/json';
+
     /**
      * @var NwApi\Di
      */
@@ -65,9 +68,10 @@ class RestEntities extends Singleton
         $di = Di::getInstance();
         $entity = new $meta->name();
         $data = json_decode($di->slim->request->getBody(), true);
-        $this->setProperties($meta, $entity, $data);
+        $response = $this->setProperties($meta, $entity, $data);
         $di->slim->response->setStatus(201);
         $di->slim->response->headers->set('Location', Router::getInstance()->getEntityLocation($meta, $entity));
+
         $this->response($entity);
     }
 
@@ -125,12 +129,34 @@ class RestEntities extends Singleton
     private function setProperties(ClassMetadata $meta, Entity $entity)
     {
         $di = Di::getInstance();
-        $data = json_decode($di->slim->request->getBody(), true);
-        foreach ($data as $name => $value) {
-            $entity = $this->setProperty($meta, $entity, $name, $value);
+        $contentType = $di->slim->request->headers->get('Content-Type');
+        if ($contentType !== static::DEFAULT_CONTENT_TYPE) {
+            throw new ClientException('Invalid request content type '.json_encode(['Content-Type' => $contentType]), ClientException::CODE_BAD_REQUEST);
         }
-        $di->em->persist($entity);
-        $di->em->flush();
+        $bodyData = $di->slim->request->getBody();
+        $data = json_decode($di->slim->request->getBody(), true);
+        if ($data === false) {
+            throw new ClientException('Unable to json decode body '.json_encode(['body' => $bodyData]), ClientException::CODE_BAD_REQUEST);
+        }
+        if (is_array($data)) {
+            foreach ($data as $name => $value) {
+                $entity = $this->setProperty($meta, $entity, $name, $value);
+            }
+        }
+
+        try {
+            $di->em->persist($entity);
+            $di->em->flush();
+        } catch (\Doctrine\DBAL\Exception\ConstraintViolationException $ex) {
+            $match = [];
+            // Catch the clean part of the message
+            if (preg_match('~.*?:\s{2}(.*)$~s', $ex->getMessage(), $match)) {
+                $message = trim($match[1]);
+            } else {
+                $message = 'Contraint violation, check your request body data';
+            }
+            throw new ClientException($message, ClientException::CODE_BAD_REQUEST);
+        }
 
         return $entity;
     }
@@ -155,12 +181,12 @@ class RestEntities extends Singleton
                 $id = [$meta->associationMappings[$name]['joinColumns'][0]['referencedColumnName'] => $value];
                 $linkedEntity = $di->em->find($meta->getAssociationTargetClass($name), $id);
                 if (is_null($linkedEntity)) {
-                    $di->slim->response->setStatus(404);
+                    throw new ClientException('Entity not found for nested entity '.json_encode(['name' => $name]), ClientException::CODE_NOT_FOUND);
                 } else {
                     $meta->setFieldValue($entity, $name, $linkedEntity);
                 }
             } else {
-                throw new Exception('Unhandled association type for field '.$name.' on '.$meta->name);
+                throw new ServerException('Unhandled association type for field '.$name.' on '.$meta->name, ServerException::CODE_NOT_IMPLEMENTED);
             }
         }
 
@@ -180,7 +206,7 @@ class RestEntities extends Singleton
         $di = Di::getInstance();
         $entity = $di->em->find($meta->name, array_combine($meta->identifier, $id));
         if (is_null($entity)) {
-            $di->slim->response->setStatus(404);
+            throw new ClientException('Entity not found', ClientException::CODE_NOT_FOUND);
         }
 
         return $entity;
@@ -189,7 +215,7 @@ class RestEntities extends Singleton
     private function response($body)
     {
         $di = Di::getInstance();
+        $di->slim->response->headers->set('Content-Type', static::DEFAULT_CONTENT_TYPE);
         $di->slim->response->setBody(json_encode($body));
-        $di->slim->response->headers->set('Content-Type', 'application/json');
     }
 }
