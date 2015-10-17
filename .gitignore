@@ -1,3 +1,4 @@
 vendor
 config/mysql.php
 coverage
+last-tests.lock
