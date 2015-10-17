@@ -10,4 +10,5 @@ echo $DOCKER_IMAGE
 docker rm -f newswatcher-db
 docker rm -f newswatcher-api
 docker run -d --name newswatcher-db -e MYSQL_ROOT_PASSWORD=qmcHwhHNPjfnOM1y mysql:latest
-docker run -d --name newswatcher-api --link newswatcher-db:db -p 8080:80 -v $DIR:/data/http $DOCKER_IMAGE
+docker run -d --name newswatcher-api --link newswatcher-db:db --link newswatcher-rabbitmq:amqp -p 8080:80 -v $DIR:/data/http $DOCKER_IMAGE
+docker exec newswatcher-api /bin/bash -c "cd /data/http && vendor/bin/doctrine orm:schema-tool:create"
