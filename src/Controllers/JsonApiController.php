@@ -127,7 +127,7 @@ class JsonApiController extends Singleton
     {
         $di = Di::getInstance();
         $contentType = $di->slim->request->headers->get('Content-Type');
-        if ($contentType !== static::DEFAULT_CONTENT_TYPE) {
+        if (strpos($contentType, static::DEFAULT_CONTENT_TYPE) !== 0) {
             throw new ClientException('Invalid request content type '.json_encode(['Content-Type' => $contentType]), ClientException::CODE_BAD_REQUEST);
         }
         $bodyData = $di->slim->request->getBody();
