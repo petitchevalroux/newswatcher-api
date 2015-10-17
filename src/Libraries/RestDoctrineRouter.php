@@ -9,7 +9,7 @@ use NwApi\Controllers\JsonApiController as Controller;
 use NwApi\Entities\Entity;
 use Exception;
 
-class RestDoctrineRouter extends Singleton
+class RestDoctrineRouter
 {
     private function getEntitiesMetas()
     {

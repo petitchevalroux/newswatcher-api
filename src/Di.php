@@ -12,6 +12,7 @@ namespace NwApi;
  * @property \Slim\Slim $slim framework object
  * @property string $templatesPath directory containing templates
  * @property Doctrine\DBAL\Logging\DebugStack $sqlLogger logger containing all sql queries
+ * @property \NwApi\Libraries\RestDoctrineRouter $jsonApiRouter
  */
 class Di extends Libraries\Singleton
 {

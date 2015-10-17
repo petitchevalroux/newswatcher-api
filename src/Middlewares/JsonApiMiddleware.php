@@ -6,8 +6,7 @@ use Slim\Middleware;
 use NwApi\Di;
 use NwApi\Exceptions\Http as HttpException;
 use NwApi\Exceptions\Api as ApiException;
-use Exception;
-use NwApi\Libraries\RestDoctrineRouter as JsonApiRouter;
+use \Exception;
 use NwApi\Controllers\JsonApiController;
 
 class JsonApiMiddleware extends Middleware
@@ -17,7 +16,8 @@ class JsonApiMiddleware extends Middleware
         try {
             try {
                 // Append route to the app
-                $this->app = JsonApiRouter::getInstance()->addRoutes($this->app, JsonApiController::getInstance());
+                $di = Di::getInstance();
+                $this->app = $di->jsonApiRouter->addRoutes($this->app, JsonApiController::getInstance());
                 $this->next->call();
                 if ($this->app->response->headers->get('Content-Type') === 'application/json') {
                     $this->handleJsonResponse();
@@ -26,7 +26,7 @@ class JsonApiMiddleware extends Middleware
                 $this->app->response->setStatus($ex->getCode());
                 throw $ex;
             }
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             $acceptContentType = $this->app->request->headers->get('Accept');
             // If response is not marked as error
             if ($this->app->response->getStatus() < 400) {

@@ -6,7 +6,6 @@ use NwApi\Libraries\Singleton;
 use NwApi\Di;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use NwApi\Entities\Entity;
-use NwApi\Libraries\RestDoctrineRouter as Router;
 use NwApi\Exceptions\Server as ServerException;
 use NwApi\Exceptions\Client as ClientException;
 
@@ -67,11 +66,9 @@ class JsonApiController extends Singleton
     {
         $di = Di::getInstance();
         $entity = new $meta->name();
-        $data = json_decode($di->slim->request->getBody(), true);
-        $response = $this->setProperties($meta, $entity, $data);
+        $this->setProperties($meta, $entity);
         $di->slim->response->setStatus(201);
-        $di->slim->response->headers->set('Location', Router::getInstance()->getEntityLocation($meta, $entity));
-
+        $di->slim->response->headers->set('Location', $di->jsonApiRouter->getEntityLocation($meta, $entity));
         $this->response($entity);
     }
 
@@ -126,7 +123,7 @@ class JsonApiController extends Singleton
      *
      * @return Entity
      */
-    private function setProperties(ClassMetadata $meta, Entity $entity)
+    private function setProperties(ClassMetadata $meta, Entity &$entity)
     {
         $di = Di::getInstance();
         $contentType = $di->slim->request->headers->get('Content-Type');
@@ -140,11 +137,11 @@ class JsonApiController extends Singleton
         }
         if (is_array($data)) {
             foreach ($data as $name => $value) {
-                $entity = $this->setProperty($meta, $entity, $name, $value);
+                $this->setProperty($meta, $entity, $name, $value);
             }
         }
-
-        try {
+        
+        try {    
             $di->em->persist($entity);
             $di->em->flush();
         } catch (\Doctrine\DBAL\Exception\ConstraintViolationException $ex) {
@@ -171,7 +168,7 @@ class JsonApiController extends Singleton
      *
      * @return Entity
      */
-    private function setProperty(ClassMetadata $meta, Entity $entity, $name, $value)
+    private function setProperty(ClassMetadata $meta, Entity &$entity, $name, $value)
     {
         if ($meta->hasField($name) && !$meta->isIdentifier($name)) {
             $meta->setFieldValue($entity, $name, $value);
@@ -179,6 +176,7 @@ class JsonApiController extends Singleton
             // We have a single value and there is only one column in association
             if (!is_array($value) && !is_object($value) && $meta->isAssociationWithSingleJoinColumn($name)) {
                 $id = [$meta->associationMappings[$name]['joinColumns'][0]['referencedColumnName'] => $value];
+                $di = Di::getInstance();
                 $linkedEntity = $di->em->find($meta->getAssociationTargetClass($name), $id);
                 if (is_null($linkedEntity)) {
                     throw new ClientException('Entity not found for nested entity '.json_encode(['name' => $name]), ClientException::CODE_NOT_FOUND);
@@ -189,8 +187,6 @@ class JsonApiController extends Singleton
                 throw new ServerException('Unhandled association type for field '.$name.' on '.$meta->name, ServerException::CODE_NOT_IMPLEMENTED);
             }
         }
-
-        return $entity;
     }
 
     /**
