@@ -60,15 +60,30 @@ class JsonApiController extends Singleton
     /**
      * Creates a new entity.
      *
-     * @param ClassMetadata $meta entity metadata
+     * If $sourceMeta and $sourceId are specified, the created entity will be
+     * associated to the source entity
+     *
+     * @param ClassMetadata $meta
+     * @param ClassMetadata $sourceMeta meta of associated source entity
+     * @param array         $sourceId   id of associated source entity
      */
-    public function createEntity(ClassMetadata $meta)
+    public function createEntity(ClassMetadata $meta, $aFieldName = '', ClassMetadata $aSourceMeta = null, $aSourceId = null)
     {
+        if (!is_null($aSourceMeta)) {
+            $sourceEntity = $this->fetchEntity($aSourceMeta, $aSourceId);
+        } else {
+            $sourceEntity = false;
+        }
         $di = Di::getInstance();
         $entity = new $meta->name();
         $this->setProperties($meta, $entity);
         $di->slim->response->setStatus(201);
         $di->slim->response->headers->set('Location', $di->jsonApiRouter->getEntityLocation($meta, $entity));
+        if ($sourceEntity !== false) {
+            $sourceEntity->{$aFieldName}[] = $entity;
+            $di->em->persist($sourceEntity);
+            $di->em->flush();
+        }
         $this->response($entity);
     }
 
@@ -140,8 +155,8 @@ class JsonApiController extends Singleton
                 $this->setProperty($meta, $entity, $name, $value);
             }
         }
-        
-        try {    
+
+        try {
             $di->em->persist($entity);
             $di->em->flush();
         } catch (\Doctrine\DBAL\Exception\ConstraintViolationException $ex) {
