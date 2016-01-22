@@ -1,8 +1,23 @@
 #Newswatcher storage api#
+
+##Utility##
+
 Running images without rebuilding (from the root of repository)
 
 ```bash
 bin/start-dev-http.sh
+```
+
+Connect to the docker container
+
+```bash
+docker exec -it newswatcher-api bash
+```
+
+Update database schema (from the container)
+
+```bash
+cd /data/http && vendor/bin/doctrine orm:schema-tool:update --force
 ```
 
 ##Sources##
