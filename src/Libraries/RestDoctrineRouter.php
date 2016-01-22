@@ -17,6 +17,19 @@ class RestDoctrineRouter
 
         return $di->em->getMetadataFactory()->getAllMetadata();
     }
+    /**
+     * Gets the class metadata descriptor for a class.
+     *
+     * @param string $className The name of the class.
+     *
+     * @return ClassMetadata
+     */
+    private function getEntityMeta($className)
+    {
+        $di = Di::getInstance();
+
+        return $di->em->getMetadataFactory()->getMetadataFor($className);
+    }
 
     public function addRoutes(Slim $application, Controller $controller)
     {
@@ -57,6 +70,20 @@ class RestDoctrineRouter
         $application->delete($entityPath, function () use ($meta, $controller) {
             $controller->deleteEntity($meta, func_get_args());
         });
+
+        // Handling associated entities
+        foreach ($meta->getAssociationMappings() as $aName => $aData) {
+            $aTargetClass = $meta->getAssociationTargetClass($aName);
+            $aUrl = $entityPath.'/'.$aName;
+            $aMeta = $this->getEntityMeta($aTargetClass);
+            // Create associated entity
+            // allow to create entity and link source together
+            // POST /articles/1/tags will fetch article 1, create tag entity and
+            // associate it to article 1
+            $application->post($aUrl, function () use ($meta, $aMeta, $controller, $aData) {
+                $controller->createEntity($aMeta, $aData['fieldName'], $meta, func_get_args());
+            });
+        };
 
         return $application;
     }
