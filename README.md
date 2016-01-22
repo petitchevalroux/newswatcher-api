@@ -13,7 +13,7 @@ Query:
 POST /sources_twitter HTTP/1.1
 Host: 192.168.99.100:8081
 Content-Type: application/json; charset=UTF-8
-{"method":"user","consumerKey":"key","consumerSecret":"secret","accessTokenKey":"tokenKey","accessTokenSecret":"tokenSecret"}
+{"method":"user","accessTokenKey":"tokenKey","accessTokenSecret":"tokenSecret"}
 ```
 
 Answer:

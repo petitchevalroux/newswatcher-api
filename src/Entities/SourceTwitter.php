@@ -20,18 +20,6 @@ class SourceTwitter extends Source
      * @var string
      * @ORM\Column(type="string")
      */
-    public $consumerKey;
-
-    /**
-     * @var string
-     * @ORM\Column(type="string")
-     */
-    public $consumerSecret;
-
-    /**
-     * @var string
-     * @ORM\Column(type="string")
-     */
     public $accessTokenKey;
 
     /**
