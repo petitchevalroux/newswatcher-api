@@ -5,8 +5,9 @@ namespace NwApi\Middlewares;
 use Slim\Middleware;
 use NwApi\Di;
 use NwApi\Exceptions\Http as HttpException;
-use NwApi\Exceptions\Api as ApiException;
-use \Exception;
+use NwApi\Exceptions\Client as ClientException;
+use NwApi\Exceptions\Server as ServerException;
+use Exception;
 use NwApi\Controllers\JsonApiController;
 
 class JsonApiMiddleware extends Middleware
@@ -28,13 +29,20 @@ class JsonApiMiddleware extends Middleware
             }
         } catch (Exception $ex) {
             $acceptContentType = $this->app->request->headers->get('Accept');
+            $responseStatus = $this->app->response->getStatus();
             // If response is not marked as error
-            if ($this->app->response->getStatus() < 400) {
-                $this->app->response->setStatus(503);
+            if ($responseStatus < 400) {
+                if ($ex instanceof ServerException) {
+                    if ($responseStatus < 500) {
+                        $this->app->response->setStatus(500);
+                    }
+                } else {
+                    $this->app->response->setStatus(503);
+                }
             }
             $di = Di::getInstance();
-            // We display message only if it is a valid API exception
-            if ($ex instanceof ApiException || $di->env === ENV_DEVELOPMENT) {
+            // We display message only if it is a valid client exception
+            if ($ex instanceof ClientException || $di->env === ENV_DEVELOPMENT) {
                 $exceptionMessage = $ex->getMessage();
             } else {
                 $exceptionMessage = 'Internal server error';
