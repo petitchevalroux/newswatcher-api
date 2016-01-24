@@ -32,8 +32,6 @@ class SourceTwitter extends Source
     {
         return parent::jsonSerialize() + [
             'method' => $this->method,
-            'consumerKey' => $this->consumerKey,
-            'consumerSecret' => $this->consumerSecret,
             'accessTokenKey' => $this->accessTokenKey,
             'accessTokenSecret' => $this->accessTokenSecret,
         ];
