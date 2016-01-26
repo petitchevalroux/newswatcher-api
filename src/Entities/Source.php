@@ -24,8 +24,18 @@ abstract class Source extends EntityWithId
      */
     public $articles;
 
+    /**
+     * @ORM\ManyToMany(targetEntity="User")
+     * @ORM\JoinTable(name="sources_users",
+     *      joinColumns={@ORM\JoinColumn(name="source_id", referencedColumnName="id")},
+     *      inverseJoinColumns={@ORM\JoinColumn(name="user_id", referencedColumnName="id")}
+     *      )
+     */
+    public $users;
+
     public function __construct()
     {
         $this->articles = new ArrayCollection();
+        $this->users = new ArrayCollection();
     }
 }
