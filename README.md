@@ -70,3 +70,27 @@ Location: /articles/1
   "title": null
 }
 ```
+
+###Associate an existing source to an existing user ###
+Query:
+
+```
+POST /sources_twitter/1/users/1 HTTP/1.1
+Host: 192.168.99.100:8081
+Content-Type: application/json; charset=UTF-8
+```
+
+Answer:
+
+```
+HTTP/1.1 201 Created
+
+{
+  "sources_twitter": {
+    "id": "1"
+  },
+  "users": {
+    "id": "1"
+  }
+}
+```
