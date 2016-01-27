@@ -131,6 +131,32 @@ class JsonApiController extends Singleton
     }
 
     /**
+     * Return request data from body.
+     *
+     * @return type
+     *
+     * @throws ClientException
+     */
+    private function getRequestData()
+    {
+        if (!isset($this->requestData)) {
+            $di = Di::getInstance();
+            $contentType = $di->slim->request->headers->get('Content-Type');
+            if (strpos($contentType, static::DEFAULT_CONTENT_TYPE) !== 0) {
+                throw new ClientException('Invalid request content type '.json_encode(['Content-Type' => $contentType]), ClientException::CODE_BAD_REQUEST);
+            }
+            $bodyData = $di->slim->request->getBody();
+            $data = json_decode($di->slim->request->getBody(), true);
+            if ($data === false) {
+                throw new ClientException('Unable to json decode body '.json_encode(['body' => $bodyData]), ClientException::CODE_BAD_REQUEST);
+            }
+            $this->requestData = $data;
+        }
+
+        return $this->requestData;
+    }
+
+    /**
      * Copy properties from body request to $entity and save it.
      *
      * @param ClassMetadata $meta
@@ -140,16 +166,7 @@ class JsonApiController extends Singleton
      */
     private function setProperties(ClassMetadata $meta, Entity &$entity)
     {
-        $di = Di::getInstance();
-        $contentType = $di->slim->request->headers->get('Content-Type');
-        if (strpos($contentType, static::DEFAULT_CONTENT_TYPE) !== 0) {
-            throw new ClientException('Invalid request content type '.json_encode(['Content-Type' => $contentType]), ClientException::CODE_BAD_REQUEST);
-        }
-        $bodyData = $di->slim->request->getBody();
-        $data = json_decode($di->slim->request->getBody(), true);
-        if ($data === false) {
-            throw new ClientException('Unable to json decode body '.json_encode(['body' => $bodyData]), ClientException::CODE_BAD_REQUEST);
-        }
+        $data = $this->getRequestData();
         if (is_array($data)) {
             foreach ($data as $name => $value) {
                 $this->setProperty($meta, $entity, $name, $value);
@@ -157,6 +174,7 @@ class JsonApiController extends Singleton
         }
 
         try {
+            $di = Di::getInstance();
             $di->em->persist($entity);
             $di->em->flush();
         } catch (\Doctrine\DBAL\Exception\ConstraintViolationException $ex) {
@@ -217,7 +235,7 @@ class JsonApiController extends Singleton
         $di = Di::getInstance();
         $entity = $di->em->find($meta->name, array_combine($meta->identifier, $id));
         if (is_null($entity)) {
-            throw new ClientException('Entity not found', ClientException::CODE_NOT_FOUND);
+            throw new ClientException('Entity '.$meta->table['name'].' not found', ClientException::CODE_NOT_FOUND);
         }
 
         return $entity;
@@ -228,5 +246,32 @@ class JsonApiController extends Singleton
         $di = Di::getInstance();
         $di->slim->response->headers->set('Content-Type', static::DEFAULT_CONTENT_TYPE);
         $di->slim->response->setBody(json_encode($body));
+    }
+
+    public function associateEntities(ClassMetadata $meta, $aFieldName, ClassMetadata $aSourceMeta = null, $ids)
+    {
+        $countSourceIdentifier = count($aSourceMeta->identifier);
+        $sourceEntityIds = array_slice($ids, 0, $countSourceIdentifier);
+        if (count($sourceEntityIds) !== $countSourceIdentifier) {
+            throw new ClientException('wrong identifier\'s count for resource '.$aSourceMeta->table['name'], ClientException::CODE_BAD_REQUEST);
+        }
+        $entityIds = array_slice($ids, $countSourceIdentifier);
+        if (count($entityIds) !== count($meta->identifier)) {
+            throw new ClientException('wrong identifier\'s count for resource '.$meta->table['name'], ClientException::CODE_BAD_REQUEST);
+        }
+        $sourceEntity = $this->fetchEntity($aSourceMeta, $sourceEntityIds);
+        $entity = $this->fetchEntity($meta, $entityIds);
+        try {
+            $sourceEntity->{$aFieldName}[] = $entity;
+            $di = Di::getInstance();
+            $di->em->flush();
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $ex) {
+            throw new ClientException('Unique constraint violation, this resources are probably already associated', ClientException::CODE_BAD_REQUEST);
+        }
+        $di->slim->response->setStatus(201);
+        $this->response([
+            $aSourceMeta->table['name'] => array_combine($aSourceMeta->identifier, $sourceEntityIds),
+            $meta->table['name'] => array_combine($meta->identifier, $entityIds),
+        ]);
     }
 }

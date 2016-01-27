@@ -17,6 +17,7 @@ class RestDoctrineRouter
 
         return $di->em->getMetadataFactory()->getAllMetadata();
     }
+
     /**
      * Gets the class metadata descriptor for a class.
      *
@@ -43,49 +44,87 @@ class RestDoctrineRouter
 
     private function addRoutesFromMeta(Slim $application, ClassMetadata $meta, Controller $controller)
     {
-        $namespace = $this->getNamespace($meta);
-        $url = '/'.$namespace;
+        $entitiesRoute = $this->getEntitiesRoute($meta);
         // Fetch entities route
-        $application->get($url, function () use ($meta, $controller) {
+        $application->get($entitiesRoute, function () use ($meta, $controller) {
             $controller->getEntities($meta);
         });
         // Create entity
-        $application->post($url, function () use ($meta, $controller) {
+        $application->post($entitiesRoute, function () use ($meta, $controller) {
             $controller->createEntity($meta);
         });
-        $entityPath = $url.'/:'.implode('/:', $meta->identifier);
+        $entityRoute = $this->getEntityRoute($meta);
         // Get entity
-        $application->get($entityPath, function () use ($meta, $controller) {
+        $application->get($entityRoute, function () use ($meta, $controller) {
             $controller->getEntity($meta, func_get_args());
         });
         // Update entity
-        $application->put($entityPath, function () use ($meta, $controller) {
+        $application->put($entityRoute, function () use ($meta, $controller) {
             $controller->updateEntity($meta, func_get_args());
         });
         // Patch entity
-        $application->patch($entityPath, function () use ($meta, $controller) {
+        $application->patch($entityRoute, function () use ($meta, $controller) {
             $controller->patchEntity($meta, func_get_args());
         });
         // Delete entity
-        $application->delete($entityPath, function () use ($meta, $controller) {
+        $application->delete($entityRoute, function () use ($meta, $controller) {
             $controller->deleteEntity($meta, func_get_args());
         });
 
         // Handling associated entities
         foreach ($meta->getAssociationMappings() as $aName => $aData) {
             $aTargetClass = $meta->getAssociationTargetClass($aName);
-            $aUrl = $entityPath.'/'.$aName;
             $aMeta = $this->getEntityMeta($aTargetClass);
+            $aEntitiesRoute = $this->getEntitiesRoute($aMeta, $entityRoute);
             // Create associated entity
             // allow to create entity and link source together
             // POST /articles/1/tags will fetch article 1, create tag entity and
             // associate it to article 1
-            $application->post($aUrl, function () use ($meta, $aMeta, $controller, $aData) {
+            $application->post($aEntitiesRoute, function () use ($meta, $aMeta, $controller, $aData) {
                 $controller->createEntity($aMeta, $aData['fieldName'], $meta, func_get_args());
+            });
+
+            $aEntityRoute = $this->getEntityRoute($aMeta, $entityRoute);
+            $application->post($aEntityRoute, function () use ($meta, $aMeta, $controller, $aData) {
+                $controller->associateEntities($aMeta, $aData['fieldName'], $meta, func_get_args());
             });
         };
 
         return $application;
+    }
+
+    /**
+     * Return entities' route.
+     * 
+     * example: /articles
+     * 
+     * @param ClassMetadata $meta
+     * @param string        $prefix
+     *
+     * @return string
+     */
+    private function getEntitiesRoute(ClassMetadata $meta, $prefix = '')
+    {
+        $namespace = $this->getNamespace($meta);
+
+        return $prefix.'/'.$namespace;
+    }
+
+    /**
+     * Return entity's route.
+     *
+     * example: /articles/:articles_id
+     *
+     * @param ClassMetadata $meta
+     * @param type          $prefix
+     *
+     * @return type
+     */
+    private function getEntityRoute(ClassMetadata $meta, $prefix = '')
+    {
+        $namespace = $this->getNamespace($meta);
+
+        return $this->getEntitiesRoute($meta, $prefix).'/:'.$namespace.'_'.implode('/:', $meta->identifier);
     }
 
     /**
