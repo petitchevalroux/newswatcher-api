@@ -42,6 +42,16 @@ class JsonApiController extends Singleton
         $limit = $di->slim->request->get('limit');
         $offset = $di->slim->request->get('offset');
         $entities = $repository->findBy($filters, $orders, $limit, $offset);
+        $links = [];
+        if ($limit > 0) {
+            if ($offset > 0) {
+                $links['prev'] = $this->getEntitiesUrl($filters, $orders, $limit, max($offset - $limit, 0));
+            }
+            if (!empty($entities)) {
+                $links['next'] = $this->getEntitiesUrl($filters, $orders, $limit, $offset + $limit);
+            }
+        }
+        $di->slim->response->header('X-Json-Api', json_encode(['links' => $links]));
         $this->response($entities);
     }
 
@@ -273,5 +283,22 @@ class JsonApiController extends Singleton
             $aSourceMeta->table['name'] => array_combine($aSourceMeta->identifier, $sourceEntityIds),
             $meta->table['name'] => array_combine($meta->identifier, $entityIds),
         ]);
+    }
+
+    private function getEntitiesUrl($filters, $orders, $limit, $offset)
+    {
+        $di = Di::getInstance();
+        $url = $di->slim->request->getPath();
+        $query = http_build_query([
+            'filters' => $filters,
+            'orders' => $orders,
+            'limit' => $limit,
+            'offset' => $offset,
+        ]);
+        if (!empty($query)) {
+            $url .= '?'.$query;
+        }
+
+        return $url;
     }
 }
