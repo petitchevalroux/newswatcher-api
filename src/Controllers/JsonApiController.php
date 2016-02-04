@@ -5,6 +5,7 @@ namespace NwApi\Controllers;
 use NwApi\Libraries\Singleton;
 use NwApi\Di;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\Common\Collections\Criteria;
 use NwApi\Entities\Entity;
 use NwApi\Exceptions\Server as ServerException;
 use NwApi\Exceptions\Client as ClientException;
@@ -37,22 +38,9 @@ class JsonApiController extends Singleton
     {
         $di = Di::getInstance();
         $repository = $di->em->getRepository($meta->name);
-        $filters = (array) $di->slim->request->get('filters');
-        $orders = (array) $di->slim->request->get('orders');
-        $limit = $di->slim->request->get('limit');
-        $offset = $di->slim->request->get('offset');
+        list($filters, $orders, $limit, $offset) = $this->getFetchEntitiesParameters();
         $entities = $repository->findBy($filters, $orders, $limit, $offset);
-        $links = [];
-        if ($limit > 0) {
-            if ($offset > 0) {
-                $links['prev'] = $this->getEntitiesUrl($filters, $orders, $limit, max($offset - $limit, 0));
-            }
-            if (!empty($entities)) {
-                $links['next'] = $this->getEntitiesUrl($filters, $orders, $limit, $offset + $limit);
-            }
-        }
-        $di->slim->response->header('X-Json-Api', json_encode(['links' => $links]));
-        $this->response($entities);
+        $this->responseEntities($entities, $filters, $orders, $limit, $offset);
     }
 
     /**
@@ -301,4 +289,53 @@ class JsonApiController extends Singleton
 
         return $url;
     }
+    public function getFetchEntitiesParameters()
+    {
+        $di = Di::getInstance();
+        $filters = (array) $di->slim->request->get('filters');
+        $orders = (array) $di->slim->request->get('orders');
+        $limit = (int) $di->slim->request->get('limit');
+        $offset = $di->slim->request->get('offset');
+        if (empty($limit)) {
+            $limit = 100;
+        }
+        return [
+            $filters,
+            $orders,
+            $limit,
+            $offset,
+        ];
+    }
+
+    public function getAssociatedEntities($aFieldName, ClassMetadata $aSourceMeta, $aSourceId)
+    {
+        $sourceEntity = $this->fetchEntity($aSourceMeta, $aSourceId);
+        $entities = [];
+        list($filters, $orders, $limit, $offset) = $this->getFetchEntitiesParameters();
+        $criteria = new Criteria(null, $orders, $offset, $limit);
+        foreach ($filters as $f => $v) {
+            $criteria->andWhere(Criteria::expr()->eq($f, $v));
+        }
+        foreach ($sourceEntity->{$aFieldName}->matching($criteria) as $entity) {
+            $entities[] = $entity;
+        }
+        $this->responseEntities($entities, $filters, $orders, $limit, $offset);
+    }
+
+    private function responseEntities($entities, $filters, $orders, $limit, $offset)
+    {
+        $links = [];
+        if ($limit > 0) {
+            if ($offset > 0) {
+                $links['prev'] = $this->getEntitiesUrl($filters, $orders, $limit, max($offset - $limit, 0));
+            }
+            if (count($entities) === $limit) {
+                $links['next'] = $this->getEntitiesUrl($filters, $orders, $limit, $offset + $limit);
+            }
+        }
+        $di = Di::getInstance();
+        $di->slim->response->header('X-Json-Api', json_encode(['links' => $links]));
+        $this->response($entities);
+    }
+
 }

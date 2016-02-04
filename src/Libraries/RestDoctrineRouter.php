@@ -84,6 +84,13 @@ class RestDoctrineRouter
                 $controller->createEntity($aMeta, $aData['fieldName'], $meta, func_get_args());
             });
 
+            // List associated entities
+            $application->get($aEntitiesRoute, function () use ($meta, $controller, $aData) {
+                $controller->getAssociatedEntities($aData['fieldName'], $meta, func_get_args());
+            });
+
+            // Associate two entities
+            // POST /articles/1/tags/2 will associate article 1 to tag 2
             $aEntityRoute = $this->getEntityRoute($aMeta, $entityRoute);
             $application->post($aEntityRoute, function () use ($meta, $aMeta, $controller, $aData) {
                 $controller->associateEntities($aMeta, $aData['fieldName'], $meta, func_get_args());
