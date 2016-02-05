@@ -3,7 +3,6 @@
 namespace NwApi\Entities;
 
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * @ORM\Table(name="articles",options={"collate"="utf8mb4_unicode_ci", "charset"="utf8mb4"})
@@ -30,15 +29,8 @@ class Article extends EntityWithId
      */
     public $title;
 
-    /**
-     * @var ArrayCollection
-     * @ORM\OneToMany(targetEntity="ArticleUser", mappedBy="article")
-     **/
-    private $articlesUsers;
-
     public function __construct()
     {
-        $this->articlesUsers = new ArrayCollection();
     }
 
     public function jsonSerialize()
