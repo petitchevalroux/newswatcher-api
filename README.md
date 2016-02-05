@@ -94,3 +94,25 @@ HTTP/1.1 201 Created
   }
 }
 ```
+
+###List source's users ###
+Query:
+
+```
+GET /sources_twitter/1/users HTTP/1.1
+Host: 192.168.99.100:8081
+Content-Type: application/json; charset=UTF-8
+```
+
+Answer:
+
+```
+HTTP/1.1 200 OK
+
+[
+    {
+        "id": 1,
+        "name": "petitchevalroux"
+    }
+]
+```
