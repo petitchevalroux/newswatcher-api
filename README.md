@@ -116,3 +116,36 @@ HTTP/1.1 200 OK
     }
 ]
 ```
+
+###Link article to user ###
+Query:
+
+```
+POST /articles_users HTTP/1.1
+Host: 192.168.99.100:8081
+Content-Type: application/json; charset=UTF-8
+{"user":1,"article":1}
+```
+
+Answer:
+
+```
+HTTP/1.1 200 OK
+
+{
+  "article": {
+    "id": 1,
+    "url": "http://dev.petitchevalroux.net",
+    "urlHash": "1403472b2e77a13211ac0c3035952ac2",
+    "title": null
+  },
+  "user": {
+    "id": 1,
+    "name": "petitchevalroux",
+    "twitterId": null,
+    "twitterToken": null,
+    "twitterTokenSecret": null
+  },
+  "status": 0
+}
+```
