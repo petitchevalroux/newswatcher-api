@@ -149,3 +149,36 @@ HTTP/1.1 200 OK
   "status": 0
 }
 ```
+
+###Get user's articles###
+
+Query :
+
+```
+GET /articles_users?filters[user]=1 HTTP/1.1
+Host: 192.168.99.100:8081
+Content-Type: application/json; charset=UTF-8
+```
+
+Answer :
+
+```
+HTTP/1.1 200 OK
+[
+    {
+        "article": {
+            "id": 2,
+            "url": "http://example.com/",
+            "urlHash": "e49e31fb7338f1fa0cf7fd9fb205d453",
+            "title": "Example Domain"
+        },
+        "user": {
+            "id": 1,
+            "name": "name",
+            "twitterId": "id",
+            "twitterToken": "token",
+            "twitterTokenSecret": "secret"
+        },
+        "status": 0
+    }
+]
