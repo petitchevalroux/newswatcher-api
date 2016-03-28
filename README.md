@@ -166,6 +166,7 @@ Answer :
 HTTP/1.1 200 OK
 [
     {
+        "id": 1,
         "article": {
             "id": 2,
             "url": "http://example.com/",

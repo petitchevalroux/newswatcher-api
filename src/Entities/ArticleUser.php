@@ -33,7 +33,7 @@ class ArticleUser extends EntityWithId
 
     public function jsonSerialize()
     {
-        return [
+        return parent::jsonSerialize() + [
             'article' => $this->article,
             'user' => $this->user,
             'status' => $this->status,
