@@ -53,7 +53,7 @@ class RestDoctrineRouter
         $application->post($entitiesRoute, function () use ($meta, $controller) {
             $controller->createEntity($meta);
         });
-        $entityRoute = $this->getEntityRoute($meta);
+        $entityRoute = $this->getEntityRoute($meta, $entitiesRoute);
         // Get entity
         $application->get($entityRoute, function () use ($meta, $controller) {
             $controller->getEntity($meta, func_get_args());
@@ -75,7 +75,7 @@ class RestDoctrineRouter
         foreach ($meta->getAssociationMappings() as $aName => $aData) {
             $aTargetClass = $meta->getAssociationTargetClass($aName);
             $aMeta = $this->getEntityMeta($aTargetClass);
-            $aEntitiesRoute = $this->getEntitiesRoute($aMeta, $entityRoute);
+            $aEntitiesRoute = $entityRoute.'/'.$aName;
             // Create associated entity
             // allow to create entity and link source together
             // POST /articles/1/tags will fetch article 1, create tag entity and
@@ -91,11 +91,11 @@ class RestDoctrineRouter
 
             // Associate two entities
             // POST /articles/1/tags/2 will associate article 1 to tag 2
-            $aEntityRoute = $this->getEntityRoute($aMeta, $entityRoute);
+            $aEntityRoute = $this->getEntityRoute($aMeta, $aEntitiesRoute);
             $application->post($aEntityRoute, function () use ($meta, $aMeta, $controller, $aData) {
                 $controller->associateEntities($aMeta, $aData['fieldName'], $meta, func_get_args());
             });
-        };
+        }
 
         return $application;
     }
@@ -123,15 +123,15 @@ class RestDoctrineRouter
      * example: /articles/:articles_id
      *
      * @param ClassMetadata $meta
-     * @param type          $prefix
+     * @param string        $entitiesRoute
      *
      * @return type
      */
-    private function getEntityRoute(ClassMetadata $meta, $prefix = '')
+    private function getEntityRoute(ClassMetadata $meta, $entitiesRoute)
     {
         $namespace = $this->getNamespace($meta);
 
-        return $this->getEntitiesRoute($meta, $prefix).'/:'.$namespace.'_'.implode('/:', $meta->identifier);
+        return $entitiesRoute.'/:'.$namespace.'_'.implode('/:', $meta->identifier);
     }
 
     /**
