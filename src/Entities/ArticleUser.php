@@ -5,15 +5,14 @@ namespace NwApi\Entities;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Table(name="articles_users",options={"collate"="utf8mb4_unicode_ci", "charset"="utf8mb4"})
+ * @ORM\Table(name="articles_users",options={"collate"="utf8mb4_unicode_ci", "charset"="utf8mb4"},
+ * uniqueConstraints={@ORM\UniqueConstraint(name="articles_users", columns={"article_id", "user_id"})})
  * @ORM\Entity
- * @ORM\HasLifecycleCallbacks
  */
-class ArticleUser extends Entity
+class ArticleUser extends EntityWithId
 {
     /**
      * @var Article
-     * @ORM\Id()
      * @ORM\ManyToOne(targetEntity="Article", inversedBy="articlesUsers")
      * @ORM\JoinColumn(name="article_id", referencedColumnName="id")
      */
@@ -21,58 +20,23 @@ class ArticleUser extends Entity
 
     /**
      * @var User
-     * @ORM\Id()
      * @ORM\ManyToOne(targetEntity="User", inversedBy="articlesUsers")
      * @ORM\JoinColumn(name="user_id", referencedColumnName="id")
      */
     public $user;
 
     /**
-     * @var bool
-     * @ORM\Column(type="boolean")
-     */
-    public $isRead = false;
-
-    /**
-     * @var bool
+     * @var int
      * @ORM\Column(type="integer")
      */
-    public $twitterSeen = 0;
-
-    /**
-     * @var score
-     * @ORM\Column(type="integer")
-     */
-    public $score = 0;
-
-    /**
-     * @ORM\PrePersist
-     */
-    public function onPrePersist()
-    {
-        $this->computeScore();
-    }
-
-    /**
-     * @ORM\PreUpdate
-     */
-    public function onPreUpdate()
-    {
-        $this->computeScore();
-    }
-
-    private function computeScore()
-    {
-        $this->score = $this->twitterSeen * 1;
-    }
+    public $status = 0;
 
     public function jsonSerialize()
     {
         return [
             'article' => $this->article,
             'user' => $this->user,
-            'twitterSeen' => $this->twitterSeen,
-            'score' => $this->score,
+            'status' => $this->status,
         ];
     }
 }

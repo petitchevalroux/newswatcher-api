@@ -41,11 +41,11 @@ class User extends EntityWithId
      * @var ArrayCollection
      * @ORM\OneToMany(targetEntity="ArticleUser", mappedBy="user")
      **/
-    private $articlesUsers;
+    public $articlesUsers;
 
     public function __construct()
     {
-        $this->articlesUsers = new ArrayCollection();
+        $this->articleUsers = new ArrayCollection();
     }
 
     public function jsonSerialize()
